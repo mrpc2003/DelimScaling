@@ -9,10 +9,6 @@ Run:
     python3.10 attention_visualize.py \
         --dataset mirb --sample-idx 257 --layer 35 \
         --select-layer 0,1,2,3 --scale 8 --res-patches 512
-
-Required packages (if not already installed in this environment):
-    python3.10 -m pip install "transformers>=4.49,<4.51" accelerate qwen-vl-utils[decord] \
-        pillow matplotlib seaborn datasets
 """
 
 import argparse
