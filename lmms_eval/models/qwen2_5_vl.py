@@ -338,6 +338,7 @@ class Qwen2_5_VL(lmms):
             end_event = torch.cuda.Event(enable_timing=True)
             torch.cuda.synchronize()
             start_event.record()
+            eval_logger.info(f"SDPA diagnostic rank={self.rank}: entering model.generate")
             with torch.inference_mode():
                 with torch.no_grad():
                     cont = self.model.generate(
@@ -355,9 +356,13 @@ class Qwen2_5_VL(lmms):
                         scale=self.scale,
                     )
 
+                torch.cuda.synchronize()
+                eval_logger.info(f"SDPA diagnostic rank={self.rank}: model.generate synchronized")
 
                 generated_ids_trimmed = [out_ids[len(in_ids) :] for in_ids, out_ids in zip(inputs.input_ids, cont)]
                 answers = self.processor.batch_decode(generated_ids_trimmed, skip_special_tokens=True, clean_up_tokenization_spaces=False)
+                torch.cuda.synchronize()
+                eval_logger.info(f"SDPA diagnostic rank={self.rank}: decode synchronized")
 
             num_tokens = len(self.tokenizer(answers, return_tensors="pt").input_ids[0])
 
