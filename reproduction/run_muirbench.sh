@@ -25,7 +25,8 @@ PYTHON="${ENV_PREFIX}/bin/python"
   torch==2.7.1 torchvision==0.22.1
 "${PYTHON}" -m pip install \
   accelerate==1.8.1 datasets==3.6.0 decord==0.6.0 evaluate==0.4.3 loguru==0.7.3 \
-  pandas==2.2.3 sacrebleu==2.5.1 transformers==4.53.1 qwen-vl-utils==0.0.14
+  hf-transfer==0.1.9 pandas==2.2.3 sacrebleu==2.5.1 sqlitedict==2.1.0 \
+  tenacity==9.1.2 transformers==4.53.1 qwen-vl-utils==0.0.14
 
 # The repository carries a patched Transformers tree. PYTHONPATH ensures this
 # run's committed tree is used while the dependency environment stays identical.
