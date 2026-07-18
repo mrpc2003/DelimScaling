@@ -45,7 +45,7 @@ PY
 # SDPA is a controlled deviation from the upstream README's FlashAttention 2
 # path: FA2 2.7.4 does not provide a supported Blackwell/CUDA 12.8 wheel here.
 # It is held fixed across baseline and scaled variants.
-accelerate launch --num_processes 2 --main_process_port 12345 -m lmms_eval \
+"${PYTHON}" -m accelerate.commands.launch --num_processes 2 --main_process_port 12345 -m lmms_eval \
   --model qwen2_5_vl \
   --model_args "pretrained=Qwen/Qwen2.5-VL-3B-Instruct,device_map=cuda,attn_implementation=sdpa" \
   --tasks muirbench \
