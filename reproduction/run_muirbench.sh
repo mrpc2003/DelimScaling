@@ -54,7 +54,7 @@ PY
   --select_layer "${SELECT_LAYERS}" \
   --delim_scaling "${DELIM_SCALING}" \
   --scale "${SCALE}" \
-  --seed 1234,1234,1234 \
+  --seed 0,1234,1234,1234 \
   --log_samples \
   --output_path "${OUTPUT_DIR}" \
   --verbosity INFO
