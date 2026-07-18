@@ -316,14 +316,17 @@ class Qwen2_5_VLVisionSdpaAttention(nn.Module):
             cos, sin = position_embeddings
         q, k = apply_rotary_pos_emb_vision(q, k, cos, sin)
 
-        attention_mask = torch.zeros([1, seq_length, seq_length], device=q.device, dtype=torch.bool)
-        for i in range(1, len(cu_seqlens)):
-            attention_mask[..., cu_seqlens[i - 1] : cu_seqlens[i], cu_seqlens[i - 1] : cu_seqlens[i]] = True
-        q = q.transpose(0, 1)
-        k = k.transpose(0, 1)
-        v = v.transpose(0, 1)
-        attn_output = F.scaled_dot_product_attention(q, k, v, attention_mask, dropout_p=0.0)
-        attn_output = attn_output.transpose(0, 1)
+        # `cu_seqlens` defines independent attention blocks. Evaluating every
+        # block separately is equivalent to the former block-diagonal mask,
+        # while avoiding an O(seq_length^2) mask for large MuirBench images.
+        block_outputs = []
+        for start, end in zip(cu_seqlens[:-1].tolist(), cu_seqlens[1:].tolist()):
+            q_block = q[start:end].transpose(0, 1).unsqueeze(0)
+            k_block = k[start:end].transpose(0, 1).unsqueeze(0)
+            v_block = v[start:end].transpose(0, 1).unsqueeze(0)
+            block_output = F.scaled_dot_product_attention(q_block, k_block, v_block, dropout_p=0.0)
+            block_outputs.append(block_output.squeeze(0).transpose(0, 1))
+        attn_output = torch.cat(block_outputs, dim=0)
         attn_output = attn_output.reshape(seq_length, -1)
         attn_output = self.proj(attn_output)
         return attn_output
