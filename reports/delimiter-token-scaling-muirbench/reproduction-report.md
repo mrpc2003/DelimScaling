@@ -18,9 +18,14 @@ The scaled sample JSONL contains exactly 2,600 rows, 2,600 unique `doc_id`s span
 
 ## Controlled deviations and provenance
 
+- Fixed command on both experiments: `bash reproduction/run_muirbench.sh`; upstream base: [`a2880738e3ed7284953f3611e7c06a3c0ede9334`](https://github.com/mrpc2003/DelimScaling/commit/a2880738e3ed7284953f3611e7c06a3c0ede9334).
+- Baseline: experiment `f09f16ea-be33-45f0-afd8-7fa091d366ca`; run `8bdfef7a-f9a9-43bf-8b1b-d3923347c336`; [`orx/memory-safe-blockwise-vision-sdpa-baseline`](https://github.com/mrpc2003/DelimScaling/tree/orx/memory-safe-blockwise-vision-sdpa-baseline), commit [`fae6265`](https://github.com/mrpc2003/DelimScaling/commit/fae6265); 1,009.36 s.
+- Scaled: experiment `c471c993-9904-4539-ab0d-ee424f64f52d`; run `49e393b4-3fc3-4d43-bcc5-901b1089d8fe`; [`orx/released-code-delimiter-scaling-lambda-8-layers`](https://github.com/mrpc2003/DelimScaling/tree/orx/released-code-delimiter-scaling-lambda-8-layers), commit [`cfde04c`](https://github.com/mrpc2003/DelimScaling/commit/cfde04c); 1,814.18 s.
 - Compute: local 2× NVIDIA RTX PRO 6000 Blackwell (97,887 MiB each), Python 3.10.20, PyTorch 2.7.1+cu128.
-- Model/dataset: cached model revision `66285546d2b821cf421d4f5eb2576359d3770cd3`; MUIRBENCH revision `4c393cffc985c77d28de3b9045e2e5186920df80`.
+- Actual seed tuple: `random=0,numpy=1234,torch=1234,fewshot=1234`. Pinned dependencies include Transformers 4.53.1 and Datasets 3.6.0.
+- Model/dataset hashes are local-cache-resolved revisions: model `66285546d2b821cf421d4f5eb2576359d3770cd3`; MUIRBENCH `4c393cffc985c77d28de3b9045e2e5186920df80`.
 - Runtime: two processes and SDPA for vision/language, with blockwise `cu_seqlens` SDPA to avoid a quadratic mask; Python-object result gathering uses CPU Gloo. The paper README uses four-process FlashAttention2 and sampled decoding (temperature 0.2). Local CUDA 11.2 nvcc cannot build Blackwell sm_120 FlashAttention.
+- The memory-safe blockwise SDPA is mathematically equivalent to the intended block-diagonal varlen attention semantics, but not bitwise identical: small validation maximum difference was ~2.98e-7 in FP32 and 0.0078125 in BF16.
 - `token: False` only removes an unnecessary credential requirement for the public ungated dataset. `pytablewriter==1.2.1` was pinned solely for final CLI table rendering.
 
-Attention-reduction and no-overhead claims were not attempted; local measured scaled runtime was higher under this controlled runtime deviation.
+Initial setup/diagnostic failures and dense-mask OOM run `c858b69d` were excluded from scientific comparison. Attention-reduction and no-overhead claims were not attempted; local measured scaled runtime was higher under this controlled runtime deviation.
