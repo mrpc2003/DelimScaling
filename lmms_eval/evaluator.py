@@ -550,6 +550,11 @@ def evaluate(
         torch.cuda.empty_cache()
 
     if WORLD_SIZE > 1:
+        # Gather Python objects through a CPU Gloo group. The model and tensor
+        # collectives retain the default backend; this avoids NCCL object-gather
+        # failures on the local Blackwell runtime.
+        object_gather_group = dist.new_group(backend="gloo")
+
         # if multigpu, then gather data across all ranks to rank 0
         # first gather logged samples across all ranks
         for task_output in eval_tasks:
@@ -564,6 +569,7 @@ def evaluate(
                     obj=per_rank_samples,
                     object_gather_list=full_samples,
                     dst=0,
+                    group=object_gather_group,
                 )
 
                 if RANK == 0:
@@ -576,6 +582,7 @@ def evaluate(
                     obj=task_output.sample_metrics[metrics],
                     object_gather_list=metric_list,
                     dst=0,
+                    group=object_gather_group,
                 )
                 if RANK == 0:
                     task_output.sample_metrics[metrics] = list(itertools.chain.from_iterable(metric_list))
