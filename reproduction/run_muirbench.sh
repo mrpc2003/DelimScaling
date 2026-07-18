@@ -33,6 +33,9 @@ PYTHON="${ENV_PREFIX}/bin/python"
 export PYTHONPATH="${PWD}/transformers/src:${PWD}/qwen-vl-utils/src${PYTHONPATH:+:${PYTHONPATH}}"
 export HF_HOME="${CACHE_ROOT}/huggingface"
 export TOKENIZERS_PARALLELISM=false
+# Diagnostic children may synchronize CUDA to expose the true failing operation.
+# Normal baseline and scaled runs leave this at 0.
+export CUDA_LAUNCH_BLOCKING="${CUDA_LAUNCH_BLOCKING:-0}"
 
 "${PYTHON}" - <<'PY'
 import torch
