@@ -12,6 +12,10 @@ Paper Table 1 reports Qwen2.5-VL-3B MuirBench 37.31% to 42.42% (+5.11 pp; 970/26
 
 The code setting was `lambda=8`, layers 0–3. It is the released-code reference setting, not a proven exact Table-1 MuirBench factor: Appendix A.3 says factors were tuned per model/benchmark on 10% of test, and that tuning protocol was not reproduced. Appendix A.5 supports layers 0–3.
 
+## Independent result-integrity check
+
+The scaled sample JSONL contains exactly 2,600 rows, 2,600 unique `doc_id`s spanning 0–2599, and no duplicates. Its exact-correct count is 1,071; the results JSON reports both original and effective sample counts as 2,600. Paired against the baseline: 277 improved, 168 regressed, 794 both-correct, and 1,361 both-wrong — net +109 correct answers.
+
 ## Controlled deviations and provenance
 
 - Compute: local 2× NVIDIA RTX PRO 6000 Blackwell (97,887 MiB each), Python 3.10.20, PyTorch 2.7.1+cu128.

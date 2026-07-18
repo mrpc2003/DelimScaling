@@ -2,6 +2,8 @@
 
 Tested Table-1 Qwen2.5-VL-3B MuirBench delimiter scaling on the full public 2,600-example test set. **Partially reproduced:** paper 37.31% → 42.42% (+5.11 pp); local 37.00% → 41.19% (+4.19 pp). The run used 2× local RTX PRO 6000 Blackwell GPUs, Python 3.10/PyTorch CUDA 12.8, SDPA vision+language with blockwise vision attention, rather than the README's four-process FlashAttention2/sampled path. λ=8/layers 0–3 is the released-code reference setting; the paper's 10%-test tuning protocol was not reproduced. Details: [full report](reports/delimiter-token-scaling-muirbench/reproduction-report.md).
 
+Independent integrity check: scaled samples contain all 2,600 unique document IDs (0–2599), with 1,071 exact correct; paired outcomes are 277 improved / 168 regressed, net +109.
+
 | Branch / experiment | Purpose or change | Exact run command | Verdict / outcome | Compute |
 |---|---|---|---|---|
 | `main` | Not run as an experiment (publication surface) | — | Published reproduction materials | — |
