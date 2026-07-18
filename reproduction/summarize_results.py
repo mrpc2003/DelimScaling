@@ -19,11 +19,16 @@ def main() -> None:
     parser.add_argument("--scale", required=True)
     parser.add_argument("--layers", required=True)
     parser.add_argument("--attention", required=True)
+    parser.add_argument("--limit", default="")
     args = parser.parse_args()
 
     payload = json.loads(args.results.read_text(encoding="utf-8"))
     metrics = payload.get("results", {}).get("muirbench", {})
-    matches = {key: value for key, value in metrics.items() if "muirbench_score_overall" in key}
+    matches = {
+        key: value
+        for key, value in metrics.items()
+        if key.startswith("muirbench_score_overall,") and "_stderr," not in key
+    }
     if len(matches) != 1:
         raise RuntimeError(f"Expected exactly one MuirBench aggregate metric, found: {matches}")
     metric_name, score = next(iter(matches.items()))
@@ -44,7 +49,13 @@ def main() -> None:
         f"- MuirBench aggregate ({metric_name}): {float(score) * 100:.2f}% ({float(score):.6f})",
         f"- Delimiter scaling: {args.scaling}; scale={args.scale}; selected layers={args.layers}",
         f"- Attention implementation: {args.attention}",
-        "- Evaluation: full `MUIRBENCH/MUIRBENCH` test split; Qwen/Qwen2.5-VL-3B-Instruct; batch size 1/GPU; seed 1234.",
+        "- Evaluation: "
+        + (
+            f"smoke limit {args.limit} from `MUIRBENCH/MUIRBENCH` test split"
+            if args.limit
+            else "full `MUIRBENCH/MUIRBENCH` test split"
+        )
+        + "; Qwen/Qwen2.5-VL-3B-Instruct; batch size 1/GPU; seed 1234.",
         f"- Elapsed evaluator time: {elapsed} s",
         f"- Python: {platform.python_version()}",
         "- GPUs: " + gpu.replace("\n", "; "),

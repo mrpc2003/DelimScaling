@@ -73,4 +73,5 @@ test -n "${RESULT_JSON}"
   --scaling "${DELIM_SCALING}" \
   --scale "${SCALE}" \
   --layers "${SELECT_LAYERS}" \
-  --attention sdpa
+  --attention sdpa \
+  --limit "${EVAL_LIMIT}"
