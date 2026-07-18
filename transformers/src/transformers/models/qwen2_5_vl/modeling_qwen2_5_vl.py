@@ -316,14 +316,17 @@ class Qwen2_5_VLVisionSdpaAttention(nn.Module):
             cos, sin = position_embeddings
         q, k = apply_rotary_pos_emb_vision(q, k, cos, sin)
 
-        attention_mask = torch.zeros([1, seq_length, seq_length], device=q.device, dtype=torch.bool)
-        for i in range(1, len(cu_seqlens)):
-            attention_mask[..., cu_seqlens[i - 1] : cu_seqlens[i], cu_seqlens[i - 1] : cu_seqlens[i]] = True
-        q = q.transpose(0, 1)
-        k = k.transpose(0, 1)
-        v = v.transpose(0, 1)
-        attn_output = F.scaled_dot_product_attention(q, k, v, attention_mask, dropout_p=0.0)
-        attn_output = attn_output.transpose(0, 1)
+        # `cu_seqlens` defines independent attention blocks. Evaluating every
+        # block separately is equivalent to the former block-diagonal mask,
+        # while avoiding an O(seq_length^2) mask for large MuirBench images.
+        block_outputs = []
+        for start, end in zip(cu_seqlens[:-1].tolist(), cu_seqlens[1:].tolist()):
+            q_block = q[start:end].transpose(0, 1).unsqueeze(0)
+            k_block = k[start:end].transpose(0, 1).unsqueeze(0)
+            v_block = v[start:end].transpose(0, 1).unsqueeze(0)
+            block_output = F.scaled_dot_product_attention(q_block, k_block, v_block, dropout_p=0.0)
+            block_outputs.append(block_output.squeeze(0).transpose(0, 1))
+        attn_output = torch.cat(block_outputs, dim=0)
         attn_output = attn_output.reshape(seq_length, -1)
         attn_output = self.proj(attn_output)
         return attn_output
@@ -341,10 +344,7 @@ class Qwen2_5_VLVisionBlock(nn.Module):
         super().__init__()
         self.norm1 = Qwen2RMSNorm(config.hidden_size, eps=1e-6)
         self.norm2 = Qwen2RMSNorm(config.hidden_size, eps=1e-6)
-        '''self.attn = QWEN2_5_VL_VISION_ATTENTION_CLASSES[attn_implementation](
-            config.hidden_size, num_heads=config.num_heads
-        )'''
-        self.attn = QWEN2_5_VL_VISION_ATTENTION_CLASSES["flash_attention_2"](
+        self.attn = QWEN2_5_VL_VISION_ATTENTION_CLASSES[attn_implementation](
             config.hidden_size, num_heads=config.num_heads
         )
         self.mlp = Qwen2_5_VLMLP(config, bias=True)
@@ -955,7 +955,16 @@ class Qwen2_5_VLSdpaAttention(Qwen2_5_VLAttention):
         use_cache: bool = False,
         cache_position: Optional[torch.LongTensor] = None,
         position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,  # necessary, but kept here for BC
+        vs_pos: Optional[torch.Tensor] = None,
+        ve_pos: Optional[torch.Tensor] = None,
+        layer_num: Optional[int] = None,
+        scale: Optional[float] = None,
+        select_layer: Optional[List[int]] = None,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor], Optional[Tuple[torch.Tensor]]]:
+        # These delimiter-scaling arguments are intentionally consumed by the
+        # enclosing Qwen2_5_VLModel loop after each decoder layer.  SDPA only
+        # needs the standard attention inputs, but must accept the shared layer
+        # interface used by the eager and FlashAttention implementations.
         if output_attentions:
             # TODO: Improve this warning with e.g. `model.config.attn_implementation = "manual"` once this is implemented.
             logger.warning_once(

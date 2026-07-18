@@ -24,8 +24,9 @@ PYTHON="${ENV_PREFIX}/bin/python"
   --index-url https://download.pytorch.org/whl/cu128 \
   torch==2.7.1 torchvision==0.22.1
 "${PYTHON}" -m pip install \
-  accelerate==1.8.1 datasets==3.6.0 decord==0.6.0 loguru==0.7.3 \
-  pandas==2.2.3 transformers==4.53.1 qwen-vl-utils==0.0.14
+  accelerate==1.8.1 datasets==3.6.0 decord==0.6.0 evaluate==0.4.3 loguru==0.7.3 \
+  hf-transfer==0.1.9 matplotlib==3.9.4 openai==1.99.9 pandas==2.2.3 sacrebleu==2.5.1 seaborn==0.13.2 sqlitedict==2.1.0 \
+  tenacity==9.1.2 transformers==4.53.1 qwen-vl-utils==0.0.14 pytablewriter==1.2.1
 
 # The repository carries a patched Transformers tree. PYTHONPATH ensures this
 # run's committed tree is used while the dependency environment stays identical.
@@ -43,9 +44,14 @@ assert torch.cuda.device_count() >= 2, "Expected the inspected two-GPU local mac
 PY
 
 # SDPA is a controlled deviation from the upstream README's FlashAttention 2
-# path: FA2 2.7.4 does not provide a supported Blackwell/CUDA 12.8 wheel here.
-# It is held fixed across baseline and scaled variants.
-accelerate launch --num_processes 2 --main_process_port 12345 -m lmms_eval \
+# path.  The local CUDA 11.2 nvcc cannot build Blackwell sm_120 FlashAttention,
+# so the committed Qwen patch restores the requested SDPA class for both vision
+# and language attention. It is held fixed across baseline and scaled variants.
+LIMIT_ARGS=()
+if [[ -n "${EVAL_LIMIT}" ]]; then
+  LIMIT_ARGS=(--limit "${EVAL_LIMIT}")
+fi
+"${PYTHON}" -m accelerate.commands.launch --num_processes 2 --main_process_port 12345 -m lmms_eval \
   --model qwen2_5_vl \
   --model_args "pretrained=Qwen/Qwen2.5-VL-3B-Instruct,device_map=cuda,attn_implementation=sdpa" \
   --tasks muirbench \
@@ -53,7 +59,8 @@ accelerate launch --num_processes 2 --main_process_port 12345 -m lmms_eval \
   --select_layer "${SELECT_LAYERS}" \
   --delim_scaling "${DELIM_SCALING}" \
   --scale "${SCALE}" \
-  --seed 1234,1234,1234 \
+  --seed 0,1234,1234,1234 \
+  "${LIMIT_ARGS[@]}" \
   --log_samples \
   --output_path "${OUTPUT_DIR}" \
   --verbosity INFO
@@ -66,4 +73,5 @@ test -n "${RESULT_JSON}"
   --scaling "${DELIM_SCALING}" \
   --scale "${SCALE}" \
   --layers "${SELECT_LAYERS}" \
-  --attention sdpa
+  --attention sdpa \
+  --limit "${EVAL_LIMIT}"

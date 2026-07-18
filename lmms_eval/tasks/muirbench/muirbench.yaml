@@ -1,7 +1,9 @@
 dataset_path: MUIRBENCH/MUIRBENCH
 task: "muirbench"
 dataset_kwargs:
-  token: True
+  # MUIRBENCH/MUIRBENCH is public and ungated.  Avoid forcing an unrelated
+  # Hugging Face credential while preserving the exact upstream test split.
+  token: False
 test_split: test
 output_type: generate_until
 doc_to_visual: !function utils.muir_doc_to_visual

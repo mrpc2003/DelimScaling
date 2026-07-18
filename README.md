@@ -1,3 +1,13 @@
+# Reproduction: full MuirBench headline claim
+
+Tested Table-1 Qwen2.5-VL-3B MuirBench delimiter scaling on the full public 2,600-example test set. **Partially reproduced:** paper 37.31% → 42.42% (+5.11 pp); local 37.00% → 41.19% (+4.19 pp). The run used 2× local RTX PRO 6000 Blackwell GPUs, Python 3.10/PyTorch CUDA 12.8, SDPA vision+language with blockwise vision attention, rather than the README's four-process FlashAttention2/sampled path. λ=8/layers 0–3 is the released-code reference setting; the paper's 10%-test tuning protocol was not reproduced. Details: [full report](reports/delimiter-token-scaling-muirbench/reproduction-report.md).
+
+| Branch / experiment | Purpose or change | Exact run command | Verdict / outcome | Compute |
+|---|---|---|---|---|
+| `main` | Not run as an experiment (publication surface) | — | Published reproduction materials | — |
+| [full baseline](https://github.com/mrpc2003/DelimScaling/tree/orx/memory-safe-blockwise-vision-sdpa-baseline) | SDPA/blockwise full baseline | `bash reproduction/run_muirbench.sh` | 37.00% (962/2600) | local 2× RTX PRO 6000 Blackwell |
+| [scaled reference](https://github.com/mrpc2003/DelimScaling/tree/orx/released-code-delimiter-scaling-lambda-8-layers) | Enable λ=8, layers 0–3 | `bash reproduction/run_muirbench.sh` | 41.19% (1071/2600), +4.19 pp | local 2× RTX PRO 6000 Blackwell |
+
 # Enhancing Multi-Image Understanding Through Delimiter Token Scaling (ICLR 2026)
 
 
