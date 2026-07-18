@@ -24,7 +24,7 @@ PYTHON="${ENV_PREFIX}/bin/python"
   --index-url https://download.pytorch.org/whl/cu128 \
   torch==2.7.1 torchvision==0.22.1
 "${PYTHON}" -m pip install \
-  accelerate==1.8.1 datasets==3.6.0 decord==0.6.0 loguru==0.7.3 \
+  accelerate==1.8.1 datasets==3.6.0 decord==0.6.0 evaluate==0.4.3 loguru==0.7.3 \
   pandas==2.2.3 sacrebleu==2.5.1 transformers==4.53.1 qwen-vl-utils==0.0.14
 
 # The repository carries a patched Transformers tree. PYTHONPATH ensures this
